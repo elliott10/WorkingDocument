@@ -2,6 +2,7 @@
 系统调用方式遵循RISC-V ABI,即调用号存放在a7寄存器中,6个参数分别储存在a0-a5寄存器
 中,返回值保存在a0中。
 
+## 文件系统相关
 ### #define SYS_getcwd 17
 获取当前工作目录；
 ```
@@ -37,13 +38,6 @@ int fd, int cmd;
 int ret = syscall(SYS_fcntl, fd, cmd, (void *)arg);
 ```
 
-### #define SYS_faccessat 48
-检查一个文件的用户权限；
-```
-int fd, const char *filename, int amode;
-int ret = syscall(SYS_faccessat, fd, filename, amode);
-```
-
 ### #define SYS_chdir 49
 切换工作目录；
 ```
@@ -51,13 +45,6 @@ const char *path;
 int ret = syscall(SYS_chdir, path);
 ```
 
-### #define SYS_waitid 95
-等待进程改变状态；
-```
-idtype_t type, id_t id, siginfo_t *info, int options;
-int ret = syscall(SYS_waitid, type, id, info, options, 0);
-
-```
 
 ### #define SYS_openat 56
 打开或创建一个文件；
@@ -73,29 +60,6 @@ int fd;
 int ret = syscall(SYS_close, fd);
 ```
 
-### #define SYS_fork 58
-创建一个子进程；
-```
-pid_t ret = syscall(SYS_fork);
-```
-
-### #define SYS_execve 59
-执行程序；
-```
-const char *path, char *const argv[], char *const envp[];
-int ret = syscall(SYS_execve, path, argv, envp);
-```
-### #define SYS_wait 55
-等待进程改变状态;
-```
-pid_t wait(int *wstatus);
-```
-
-### #define SYS_waitpid 60
-等待进程改变状态;
-```
-pid_t waitpid(pid_t pid, int *wstatus, int options);
-```
 
 ### #define SYS_getdents 61
 获取目录的条目;
@@ -170,11 +134,38 @@ const char *path, mode_t mode;
 int ret = syscall(SYS_chmod, path, mode);
 ```
 
-### #define SYS_chown 92
-修改文件拥有者和组；
+## 进程管理
+### #define SYS_waitid 95
+等待进程改变状态；
 ```
-const char *path, uid_t uid, gid_t gid;
-int ret = syscall(SYS_chown, path, uid, gid);
+idtype_t type, id_t id, siginfo_t *info, int options;
+int ret = syscall(SYS_waitid, type, id, info, options, 0);
+
+```
+
+
+### #define SYS_fork 58
+创建一个子进程；
+```
+pid_t ret = syscall(SYS_fork);
+```
+
+### #define SYS_execve 59
+执行程序；
+```
+const char *path, char *const argv[], char *const envp[];
+int ret = syscall(SYS_execve, path, argv, envp);
+```
+### #define SYS_wait 55
+等待进程改变状态;
+```
+pid_t wait(int *wstatus);
+```
+
+### #define SYS_waitpid 60
+等待进程改变状态;
+```
+pid_t waitpid(pid_t pid, int *wstatus, int options);
 ```
 
 ### #define SYS_exit 93
