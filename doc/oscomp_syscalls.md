@@ -2,6 +2,7 @@
 系统调用方式遵循RISC-V ABI,即调用号存放在a7寄存器中,6个参数分别储存在a0-a5寄存器
 中,返回值保存在a0中。
 
+主要参考了Linux 5.10 syscalls
 ## 文件系统相关
 ### #define SYS_getcwd 17
 获取当前工作目录；
@@ -31,14 +32,12 @@ int old, int new;
 int ret = syscall(SYS_dup2, old, new);
 ```
 
-
 ### #define SYS_chdir 49
 切换工作目录；
 ```
 const char *path;
 int ret = syscall(SYS_chdir, path);
 ```
-
 
 ### #define SYS_openat 56
 打开或创建一个文件；
@@ -54,20 +53,11 @@ int fd;
 int ret = syscall(SYS_close, fd);
 ```
 
-
 ### #define SYS_getdents 61
 获取目录的条目;
 ```
 int fd, struct dirent *buf, size_t len
 int ret = syscall(SYS_getdents, fd, buf, len);
-```
-
-### #define SYS_lseek 62
-重新定位读写文件的偏移；
-```
-int fd, off_t offset, int whence;
-off_t ret = syscall(SYS_lseek, fd, offset, whence);
-
 ```
 
 ### #define SYS_read 63
@@ -91,14 +81,6 @@ const char *filename, int flags, mode_t mode;
 int ret = syscall(SYS_open, filename, flag, mode)
 ```
 
-### #define SYS_link 1025
-创建文件的链接；
-```
-const char *existing, const char *new;
-int ret = syscall(SYS_link, existing, new);
-
-```
-
 ### #define SYS_unlink 1026
 移除指定文件的链接；
 ```
@@ -113,8 +95,22 @@ const char *path, mode_t mode;
 int ret = syscall(SYS_mkdir, path, mode);
 ```
 
+### #define SYS_umount2 39
+卸载文件系统；
+```
+const char *special, int flags;
+int ret = syscall(SYS_umount2, special, flags);
+```
+
+### #define SYS_mount 40
+挂载文件系统；
+```
+const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data;
+int ret = syscall(SYS_mount, special, dir, fstype, flags, data);
+```
 
 ### #define SYS_fstat 80
+
 获取文件状态；
 ```
 int fd;
@@ -122,32 +118,8 @@ struct kstat kst;
 int ret = syscall(SYS_stat, fd, &kst);
 ```
 
-
-### #define SYS_access 1033
-检查一个文件的用户权限；
-```
-const char *filename, int amode;
-int ret = syscall(SYS_access, filename, amode);
-
-```
-
-### #define SYS_stat 1038
-获取文件状态；
-```
-const char *restrict path;
-struct kstat kst;
-int ret = syscall(SYS_stat, path, &kst);
-```
-
-### #define SYS_lstat 1039
-获取文件状态；
-```
-const char *restrict path;
-struct kstat kst;
-int ret = syscall(SYS_lstat, path, &kst);
-```
-
 ## 进程管理相关
+
 ### #define SYS_waitid 95
 等待进程改变状态；
 ```
@@ -156,11 +128,10 @@ int ret = syscall(SYS_waitid, type, id, info, options, 0);
 
 ```
 
-
-### #define SYS_fork 58
+### #define SYS_clone 220
 创建一个子进程；
 ```
-pid_t ret = syscall(SYS_fork);
+pid_t ret = syscall(SYS_clone, flags, stack, ptid, tls, ctid)
 ```
 
 ### #define SYS_execve 59
@@ -188,36 +159,12 @@ int ec;
 syscall(SYS_exit, ec);
 ```
 
-### #define SYS_exit_group 94
-退出一个进程的所有线程，无返回值；
+### #define SYS_getppid 173
+获取父进程ID；
 ```
-int ec;
-syscall(SYS_exit_group, ec);
-```
-
-### #define SYS_kill 129
-发送一个信号给进程；
-```
-pid_t pid, int sig;
-int ret = syscall(SYS_kill, pid, sig);
+pid_t ret = syscall(SYS_getppid);
 ```
 
-### #define SYS_rt_sigaction 134
-检查并更改一个信号动作；
-```
-int sig;
-struct k_sigaction ksa, ksa_old;
-#define _NSIG     65
-int ret = syscall(SYS_rt_sigaction, sig, &ksa, &ksa_old, _NSIG/8);
-
-```
-
-### #define SYS_times 153
-获取进程时间；
-```
-struct tms *tms;
-clock_t ret = syscall(SYS_times, tms);
-```
 
 ### #define SYS_getpid 172
 获取进程ID；
@@ -225,32 +172,6 @@ clock_t ret = syscall(SYS_times, tms);
 pid_t ret = syscall(SYS_getpid);
 ```
 
-
-## 用户相关
-### #define SYS_getuid 174
-获取用户ID；
-```
-uid_t ret = syscall(SYS_getuid);
-```
-
-### #define SYS_geteuid 175
-获取用户ID；
-```
-uid_t ret = syscall(SYS_geteuid);
-```
-
-### #define SYS_getgid 176
-获取组ID；
-```
-gid_t ret = syscall(SYS_getgid);
-```
-
-### #define SYS_getegid 177
-获取组ID；
-```
-gid_t = syscall(SYS_getegid);
-
-```
 
 ## 内存管理相关
 ### #define SYS_sbrk 213
@@ -271,14 +192,6 @@ void *start, size_t len
 int ret = syscall(SYS_munmap, start, len);
 ```
 
-### #define SYS_mremap 216
-重映射一段虚拟内存地址；
-```
-void *old_addr, size_t old_len, size_t new_len, int flags,void *new_addr;
-void * ret = syscall(SYS_mremap, old_addr, old_len, new_len, flags, new_addr);
-
-```
-
 ### #define SYS_mmap 222
 将文件或设备映射到内存中；
 ```
@@ -286,14 +199,15 @@ void *start, size_t len, int prot, int flags, int fd, off_t off
 long ret = syscall(SYS_mmap, start, len, prot, flags, fd, off);
 ```
 
+## 其他
 
 ### #define SYS_time 1062
+
 获取时间；
 ```
 time_t *tloc;
 time_t ret = syscall(SYS_time, tloc);
 ```
-
 
 ### #define SYS_uname 160
 打印系统信息；
@@ -309,9 +223,7 @@ struct timespec *ts;
 int ret = syscall(SYS_gettimeofday, ts, 0);
 ```
 
-### #define SYS_getmainvars 2011
-//
-
+## 调用
 
 ```
 static inline _u64 internal_syscall(long n, _u64 _a0, _u64 _a1, _u64 _a2, _u64
@@ -328,6 +240,3 @@ static inline _u64 internal_syscall(long n, _u64 _a0, _u64 _a1, _u64 _a2, _u64
 	return a0;
 }
 ```
-
-
-
