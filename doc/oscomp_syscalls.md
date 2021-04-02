@@ -31,12 +31,6 @@ int old, int new;
 int ret = syscall(SYS_dup2, old, new);
 ```
 
-### #define SYS_fcntl 25
-操作文件描述符；
-```
-int fd, int cmd;
-int ret = syscall(SYS_fcntl, fd, cmd, (void *)arg);
-```
 
 ### #define SYS_chdir 49
 切换工作目录；
@@ -90,34 +84,35 @@ int fd, const void *buf, size_t count;
 ssize_t ret = syscall(SYS_write, fd, buf, count);
 ```
 
-### #define SYS_writev 66
-写入数据到多个缓存区；
+### #define SYS_open 1024
+打开或创建一个文件；
 ```
-int fd, const struct iovec *iov, int count;
-ssize_t ret = syscall(SYS_writev, fd, iov, count);
-```
-
-### #define SYS_pread 67
-以给定的偏移量读取文件描述符;
-```
-int fd, void *buf, size_t size, off_t ofs;
-ssize_t ret = syscall(SYS_pread, fd, buf, size, ofs);
+const char *filename, int flags, mode_t mode;
+int ret = syscall(SYS_open, filename, flag, mode)
 ```
 
-### #define SYS_pwrite 68
-以给定的偏移量写入到文件描述符
+### #define SYS_link 1025
+创建文件的链接；
 ```
-int fd, const void *buf, size_t size, off_t ofs;
-ssize_t ret = syscall(SYS_pwrite, fd, buf, size, ofs);
+const char *existing, const char *new;
+int ret = syscall(SYS_link, existing, new);
+
 ```
 
-### #define SYS_fstatat 79
-获取文件状态；
+### #define SYS_unlink 1026
+移除指定文件的链接；
 ```
-int fd, const char *restrict path, int flag;
-struct kstat kst;
-int ret = syscall(SYS_fstatat, fd, path, &kst, flag);
+const char *path;
+int ret = syscall(SYS_unlink, path);
 ```
+
+### #define SYS_mkdir 1030
+创建目录；
+```
+const char *path, mode_t mode;
+int ret = syscall(SYS_mkdir, path, mode);
+```
+
 
 ### #define SYS_fstat 80
 获取文件状态；
@@ -127,14 +122,32 @@ struct kstat kst;
 int ret = syscall(SYS_stat, fd, &kst);
 ```
 
-### #define SYS_chmod 90
-修改文件的mode位
+
+### #define SYS_access 1033
+检查一个文件的用户权限；
 ```
-const char *path, mode_t mode;
-int ret = syscall(SYS_chmod, path, mode);
+const char *filename, int amode;
+int ret = syscall(SYS_access, filename, amode);
+
 ```
 
-## 进程管理
+### #define SYS_stat 1038
+获取文件状态；
+```
+const char *restrict path;
+struct kstat kst;
+int ret = syscall(SYS_stat, path, &kst);
+```
+
+### #define SYS_lstat 1039
+获取文件状态；
+```
+const char *restrict path;
+struct kstat kst;
+int ret = syscall(SYS_lstat, path, &kst);
+```
+
+## 进程管理相关
 ### #define SYS_waitid 95
 等待进程改变状态；
 ```
@@ -206,26 +219,14 @@ struct tms *tms;
 clock_t ret = syscall(SYS_times, tms);
 ```
 
-### #define SYS_uname 160
-打印系统信息；
-```
-struct utsname *uts;
-int ret = syscall(SYS_uname, uts);
-```
-
-### #define SYS_gettimeofday 169
-获取时间；
-```
-struct timespec *ts;
-int ret = syscall(SYS_gettimeofday, ts, 0);
-```
-
 ### #define SYS_getpid 172
 获取进程ID；
 ```
 pid_t ret = syscall(SYS_getpid);
 ```
 
+
+## 用户相关
 ### #define SYS_getuid 174
 获取用户ID；
 ```
@@ -251,6 +252,7 @@ gid_t = syscall(SYS_getegid);
 
 ```
 
+## 内存管理相关
 ### #define SYS_sbrk 213
 修改数据段的大小；
 
@@ -284,58 +286,6 @@ void *start, size_t len, int prot, int flags, int fd, off_t off
 long ret = syscall(SYS_mmap, start, len, prot, flags, fd, off);
 ```
 
-### #define SYS_open 1024
-打开或创建一个文件；
-```
-const char *filename, int flags, mode_t mode;
-int ret = syscall(SYS_open, filename, flag, mode)
-```
-
-### #define SYS_link 1025
-创建文件的链接；
-```
-const char *existing, const char *new;
-int ret = syscall(SYS_link, existing, new);
-
-```
-
-### #define SYS_unlink 1026
-移除指定文件的链接；
-```
-const char *path;
-int ret = syscall(SYS_unlink, path);
-```
-
-### #define SYS_mkdir 1030
-创建目录；
-```
-const char *path, mode_t mode;
-int ret = syscall(SYS_mkdir, path, mode);
-```
-
-### #define SYS_access 1033
-检查一个文件的用户权限；
-```
-const char *filename, int amode;
-int ret = syscall(SYS_access, filename, amode);
-
-```
-
-### #define SYS_stat 1038
-获取文件状态；
-```
-const char *restrict path;
-struct kstat kst;
-int ret = syscall(SYS_stat, path, &kst);
-```
-
-### #define SYS_lstat 1039
-获取文件状态；
-```
-const char *restrict path;
-struct kstat kst;
-int ret = syscall(SYS_lstat, path, &kst);
-```
 
 ### #define SYS_time 1062
 获取时间；
@@ -343,6 +293,22 @@ int ret = syscall(SYS_lstat, path, &kst);
 time_t *tloc;
 time_t ret = syscall(SYS_time, tloc);
 ```
+
+
+### #define SYS_uname 160
+打印系统信息；
+```
+struct utsname *uts;
+int ret = syscall(SYS_uname, uts);
+```
+
+### #define SYS_gettimeofday 169
+获取时间；
+```
+struct timespec *ts;
+int ret = syscall(SYS_gettimeofday, ts, 0);
+```
+
 ### #define SYS_getmainvars 2011
 //
 
